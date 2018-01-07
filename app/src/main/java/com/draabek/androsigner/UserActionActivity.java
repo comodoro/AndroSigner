@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -11,6 +12,16 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+
+import org.web3j.crypto.CipherException;
+import org.web3j.crypto.Credentials;
+import org.web3j.crypto.WalletUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -119,24 +130,54 @@ public class UserActionActivity extends AppCompatActivity {
 
         if (Intent.ACTION_SEND.equals(action) && type != null) {
             if ("text/plain".equals(type)) {
-               String extra = intent.getStringExtra("command");
-               String appName = intent.getPackage();
-               if (extra.equals("generate")) {
+                String extra = intent.getStringExtra("command");
+                String appName = intent.getPackage();
+                if (extra.equals("generate")) {
 
-               } else if (extra.equals("sign")){
+                } else if (extra.equals("sign")) {
                     handleBadInput(appName);
-               }
+                }
             }
         }
     }
 
     private String generateAddress(String pwd) {
-        return "0x123";
+        String path = "";
+        String fileName = null;
+        try {
+            fileName = WalletUtils.generateNewWalletFile(
+                    "your password",
+                    new File(path), true);
+        } catch (CipherException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InvalidAlgorithmParameterException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchProviderException e) {
+            e.printStackTrace();
+        }
+        if (fileName == null) return null;
+        Credentials credentials = null;
+        try {
+            credentials = WalletUtils.loadCredentials(
+                    pwd,
+                    fileName);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (CipherException e) {
+            e.printStackTrace();
+        }
+        if (credentials == null) return null;
+        return credentials.getAddress();
     }
 
     private void handleAddressGeneration(String app, String pwd) {
         Intent result = new Intent("com.draabek.androsigner.RESULT_ACTION");
-        result.putExtra("generated_address", generateAddress(pwd));
+        String generatedAddress = generateAddress(pwd);
+        result.putExtra("generated_address", generatedAddress);
         setResult(Activity.RESULT_OK, result);
         finish();
     }
@@ -199,5 +240,14 @@ public class UserActionActivity extends AppCompatActivity {
     private void delayedHide(int delayMillis) {
         mHideHandler.removeCallbacks(mHideRunnable);
         mHideHandler.postDelayed(mHideRunnable, delayMillis);
+    }
+
+    /* Checks if external storage is available for read and write */
+    public boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return true;
+        }
+        return false;
     }
 }

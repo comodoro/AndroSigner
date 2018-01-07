@@ -3,8 +3,6 @@ package com.draabek.androsigner;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 
-import org.web3j.abi.datatypes.Address;
-
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -15,15 +13,15 @@ import java.util.Map;
  */
 
 public class GeneratedAddress extends PastAction {
-    Address address;
+    String address;
 
-    public GeneratedAddress(Date date, String appName, Address address) {
+    public GeneratedAddress(Date date, String appName, String address) {
         super(appName, date);
         this.address = address;
     }
     @Override
     public String getShortDescription() {
-        return address.getValue();
+        return address;
     }
 
     @Override
@@ -32,7 +30,7 @@ public class GeneratedAddress extends PastAction {
         Map<String,String> myMap = new HashMap<String,String>();
         myMap.put(context.getString(R.string.date), DateFormat.getDateInstance().format(date));
         myMap.put(context.getString(R.string.app), appName);
-        myMap.put(context.getString(R.string.address), address.getValue());
+        myMap.put(context.getString(R.string.address), address);
         return myMap;
     }
 
