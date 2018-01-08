@@ -1,7 +1,10 @@
-package com.draabek.androsigner;
+package com.draabek.androsigner.com.draabek.androsigner.pastaction;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+
+import com.draabek.androsigner.MainActivity;
+import com.draabek.androsigner.R;
 
 import java.text.DateFormat;
 import java.util.Date;

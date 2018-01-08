@@ -6,12 +6,16 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.support.annotation.Nullable;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+
+import com.draabek.androsigner.com.draabek.androsigner.pastaction.GeneratedAddress;
+import com.draabek.androsigner.com.draabek.androsigner.pastaction.GlobalActionsList;
 
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
@@ -22,6 +26,7 @@ import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.util.Date;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -133,7 +138,8 @@ public class UserActionActivity extends AppCompatActivity {
                 String extra = intent.getStringExtra("command");
                 String appName = intent.getPackage();
                 if (extra.equals("generate")) {
-
+                    String pwd = intent.getStringExtra("password");
+                    handleAddressGeneration(appName, pwd);
                 } else if (extra.equals("sign")) {
                     handleBadInput(appName);
                 }
@@ -141,6 +147,7 @@ public class UserActionActivity extends AppCompatActivity {
         }
     }
 
+    @Nullable
     private String generateAddress(String pwd) {
         String path = "";
         String fileName = null;
@@ -177,6 +184,7 @@ public class UserActionActivity extends AppCompatActivity {
     private void handleAddressGeneration(String app, String pwd) {
         Intent result = new Intent("com.draabek.androsigner.RESULT_ACTION");
         String generatedAddress = generateAddress(pwd);
+        GlobalActionsList.instance().append(new GeneratedAddress(new Date(), app, generatedAddress));
         result.putExtra("generated_address", generatedAddress);
         setResult(Activity.RESULT_OK, result);
         finish();

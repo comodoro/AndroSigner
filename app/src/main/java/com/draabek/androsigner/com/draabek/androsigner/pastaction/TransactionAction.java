@@ -1,7 +1,10 @@
-package com.draabek.androsigner;
+package com.draabek.androsigner.com.draabek.androsigner.pastaction;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+
+import com.draabek.androsigner.MainActivity;
+import com.draabek.androsigner.R;
 
 import org.web3j.protocol.core.methods.response.Transaction;
 import org.web3j.utils.Convert;
@@ -27,8 +30,8 @@ public class TransactionAction extends PastAction {
     @Override
     public String getShortDescription() {
         String line = MainActivity.getContext().getString(R.string.transaction_placeholder);
-        String from = transaction.getFrom().substring(0, 7) + "...";
-        String to = (transaction.getTo() == null) ? "-" : transaction.getTo().substring(0, 7) + "...";
+        String from = transaction.getFrom().substring(0, 6) + "...";
+        String to = (transaction.getTo() == null) ? "-" : transaction.getTo().substring(0, 6) + "...";
         BigDecimal ethValue = Convert.fromWei( transaction.getValue().toString(), Convert.Unit.ETHER);
         String value = ethValue.setScale(4, BigDecimal.ROUND_HALF_UP).toString();
         return String.format(line, from, to, value);

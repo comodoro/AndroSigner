@@ -1,13 +1,12 @@
-package com.draabek.androsigner;
+package com.draabek.androsigner.com.draabek.androsigner.pastaction;
 
-import android.content.Context;
+import android.support.annotation.NonNull;
 
 import com.google.gson.Gson;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -21,30 +20,41 @@ import java.util.List;
 
 public class GlobalActionsList {
     private static GlobalActionsList globalActionsList = null;
-    private List<TransactionAction> transactionActionList;
+    private File storeDir;
+    private List<PastAction> pastActionList;
 
-    private GlobalActionsList() {
-        transactionActionList = new ArrayList<>();
+    private GlobalActionsList(File storeDir) {
+        this.storeDir = storeDir;
+        pastActionList = new ArrayList<>();
+    }
+
+    public static void create(File storeDir) {
+        if (globalActionsList != null) {
+            throw new RuntimeException("Global actions list already created!");
+        }
+        globalActionsList = new GlobalActionsList(storeDir);
     }
 
     public static GlobalActionsList instance() {
-        if (globalActionsList == null)
-            globalActionsList = new GlobalActionsList();
+        if (globalActionsList == null) {
+            throw new RuntimeException("Global actions list not yet created!");
+        }
         return globalActionsList;
     }
 
     private void writeToFile(String filename, String data) {
         PrintWriter pw = null;
         try {
-            pw = new PrintWriter(filename);
-            pw.print(data);
-        } catch (FileNotFoundException e) {
+            pw = new PrintWriter(storeDir.getAbsolutePath() + '/' + filename);
+            pw.println(data);
+        } catch (IOException e) {
             e.printStackTrace();
         } finally {
             if (!(pw == null)) pw.close();
         }
     }
 
+    @NonNull
     private String readStringFromFile(File file) {
         StringBuilder sb = new StringBuilder();
         try {
@@ -59,22 +69,24 @@ public class GlobalActionsList {
         return sb.toString();
     }
 
-    public void appendMany(List<TransactionAction> transactionActionList) {
-        for (TransactionAction transactionAction : transactionActionList) {
-            append(transactionAction);
+    public void appendMany(List<PastAction> pastActionList) {
+        for (PastAction pastAction : pastActionList) {
+            append(pastAction);
         }
     }
 
-    public void append(TransactionAction transactionAction) {
-        String classString = transactionAction.getClass().getName();
-        String filename = classString + "_" + transactionAction.getDate().toString();
-        String json = new Gson().toJson(transactionAction);
+    public void append(PastAction pastAction) {
+        pastActionList.add(pastAction);
+        String classString = pastAction.getClass().getName();
+        String filename = classString + "_" + pastAction.getDate().getTime();
+        String json = new Gson().toJson(pastAction);
         writeToFile(filename, json);
     }
 
-    public void load(Context ctx) {
+    public void reloadAll() {
+        pastActionList.clear();
         Gson gson = new Gson();
-        File[] files = ctx.getFilesDir().listFiles();
+        File[] files = storeDir.listFiles();
         for (File file : files) {
             String name = file.getName();
             String className = name.substring(0, name.indexOf('_'));
@@ -85,8 +97,12 @@ public class GlobalActionsList {
                 e.printStackTrace();
             }
             String json = readStringFromFile(file);
-            TransactionAction transactionAction = (TransactionAction) gson.fromJson(json, c);
-            transactionActionList.add(transactionAction);
+            PastAction pastAction = (PastAction) gson.fromJson(json, c);
+            pastActionList.add(pastAction);
         }
+    }
+
+    public List<PastAction> getPastActionList() {
+        return pastActionList;
     }
 }

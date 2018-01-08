@@ -14,7 +14,10 @@ import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
-import org.web3j.abi.datatypes.Address;
+import com.draabek.androsigner.com.draabek.androsigner.pastaction.GlobalActionsList;
+import com.draabek.androsigner.com.draabek.androsigner.pastaction.PastAction;
+import com.draabek.androsigner.com.draabek.androsigner.pastaction.TransactionAction;
+
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.Web3jFactory;
 import org.web3j.protocol.core.DefaultBlockParameterNumber;
@@ -52,6 +55,8 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         statusBar = findViewById(R.id.content);
+        GlobalActionsList.create(this.getApplicationContext().getFilesDir());
+        GlobalActionsList.instance().reloadAll();
 
         statusBarHandler = new Handler(Looper.getMainLooper(), message -> {
             String text = (String)message.obj;
@@ -124,9 +129,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private List<PastAction> getPastActions() {
-        ArrayList<PastAction> actions = new ArrayList<>();
-        actions.add(new GeneratedAddress(new Date(), "Debug", new Address("0x1234")) );
-        actions.addAll(getPastTransactions(10));
+        List<PastAction> actions = GlobalActionsList.instance().getPastActionList();
         return actions;
     }
 
