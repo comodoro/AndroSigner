@@ -12,7 +12,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by Vojta on 31.12.2017.
+ * Recorded action of generating a new account
+ * Created by Vojta on 31.12.2017
  */
 
 public class GeneratedAddress extends PastAction {
@@ -30,7 +31,7 @@ public class GeneratedAddress extends PastAction {
     @Override
      public Map<String, String> getDetails() {
         Context context = MainActivity.getContext();
-        Map<String,String> myMap = new HashMap<String,String>();
+        Map<String,String> myMap = new HashMap<>();
         myMap.put(context.getString(R.string.date), DateFormat.getDateInstance().format(date));
         myMap.put(context.getString(R.string.app), appName);
         myMap.put(context.getString(R.string.address), address);
