@@ -1,6 +1,7 @@
 package com.draabek.androsigner.com.draabek.androsigner.pastaction;
 
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import com.google.gson.Gson;
 
@@ -20,17 +21,21 @@ import java.util.List;
 
 public class GlobalActionsList {
     private static GlobalActionsList globalActionsList = null;
-    private File storeDir;
+    private File rootDir;
     private List<PastAction> pastActionList;
 
-    private GlobalActionsList(File storeDir) {
-        this.storeDir = storeDir;
+    private GlobalActionsList(File rootDir) {
+        this.rootDir = rootDir;
         pastActionList = new ArrayList<>();
     }
 
     public static void create(File storeDir) {
         if (globalActionsList != null) {
-            throw new RuntimeException("Global actions list already created!");
+            if (storeDir.equals(GlobalActionsList.instance().rootDir)) {
+                //throw new RuntimeException("Global actions list already created with the same root dir!");
+                Log.w(GlobalActionsList.class.getName(), "Global actions list already created with the same root dir!");
+            }
+            throw new RuntimeException("Global actions list already created with different root dir!");
         }
         globalActionsList = new GlobalActionsList(storeDir);
     }
@@ -45,7 +50,7 @@ public class GlobalActionsList {
     private void writeToFile(String filename, String data) {
         PrintWriter pw = null;
         try {
-            pw = new PrintWriter(storeDir.getAbsolutePath() + '/' + filename);
+            pw = new PrintWriter(rootDir.getAbsolutePath() + '/' + filename);
             pw.println(data);
         } catch (IOException e) {
             e.printStackTrace();
@@ -86,20 +91,25 @@ public class GlobalActionsList {
     public void reloadAll() {
         pastActionList.clear();
         Gson gson = new Gson();
-        File[] files = storeDir.listFiles();
+        File[] files = rootDir.listFiles();
         for (File file : files) {
             String name = file.getName();
             String className = name.substring(0, name.indexOf('_'));
-            Class c = null;
+            Class<?> c = null;
             try {
                 c = Class.forName(className);
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
+            if (c == null) continue;
             String json = readStringFromFile(file);
             PastAction pastAction = (PastAction) gson.fromJson(json, c);
             pastActionList.add(pastAction);
         }
+    }
+
+    public File getRootDir() {
+        return rootDir;
     }
 
     public List<PastAction> getPastActionList() {

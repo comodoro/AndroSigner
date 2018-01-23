@@ -34,7 +34,18 @@ dependencies {
     implementation 'com.android.support.constraint:constraint-layout:1.0.2'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
+    androidTestImplementation 'com.android.support.test:rules:1.0.1'
+
+    // Espresso dependencies
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
-    compile 'org.web3j:core:3.1.1-android'
-    compile 'com.google.code.gson:gson:2.8.2'
-}
+    androidTestImplementation 'com.android.support.test.espresso:espresso-contrib:3.0.1'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-intents:3.0.1'
+    //androidTestImplementation 'com.android.support.test.espresso:espresso-accessibility:3.0.1'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-web:3.0.1'
+    androidTestImplementation 'com.android.support.test.espresso.idling:idling-concurrent:3.0.1'
+
+    // The following Espresso dependency can be either "implementation"
+    // or "androidTestImplementation", depending on your app's implementation
+    androidTestImplementation 'com.android.support.test.espresso:espresso-idling-resource:3.0.1'
+    implementation 'org.web3j:core:3.1.1-android'
+    implementation 'com.google.code.gson:gson:2.8.2'}

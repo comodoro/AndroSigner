@@ -1,20 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 android:layout_width="match_parent"
-              android:layout_height="wrap_content"
->
+                android:layout_height="wrap_content">
+
+    <ImageButton
+        android:id="@+id/list_view_pictogram"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:src="@android:drawable/ic_dialog_info"
+        android:contentDescription="@string/type_of_action"/>
 
     <TextView
         android:id="@+id/list_view_action"
+        android:layout_height="wrap_content"
         android:layout_width="wrap_content"
+        android:layout_toEndOf="@id/list_view_pictogram"
         android:ellipsize="end"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
         android:textSize="16sp"
         android:textStyle="normal"
         android:text=""
-        android:layout_height="wrap_content"/>
+        android:layout_toRightOf="@id/list_view_pictogram"
+        android:layout_toLeftOf="@id/list_view_detail"
+        android:layout_toStartOf="@id/list_view_detail"/>
 
     <ImageButton
         android:id="@+id/list_view_detail"
@@ -22,6 +31,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
-        android:src="@android:drawable/ic_media_play"/>
+        android:src="@android:drawable/ic_menu_view"
+        android:contentDescription="@string/details"/>
 
 </RelativeLayout>

@@ -1,11 +1,8 @@
 package com.draabek.androsigner;
 
-import android.content.Context;
+import android.annotation.SuppressLint;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -21,10 +18,12 @@ import com.draabek.androsigner.com.draabek.androsigner.pastaction.TransactionAct
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.Web3jFactory;
 import org.web3j.protocol.core.DefaultBlockParameterNumber;
+import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.Web3ClientVersion;
 import org.web3j.protocol.http.HttpService;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -39,34 +38,45 @@ public class MainActivity extends AppCompatActivity {
     List<PastAction> pastActionList;
     ListView pastActionsView;
     TextView statusBar;
-    Handler statusBarHandler;
-    //FIXME temporary because of mysterious ClassNotFoundException
-    static Context context;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        context = this;
-        web3 = Web3jFactory.build(new HttpService( "https://ropsten.infura.io/tmbhNp6pHaBMdPKYsP7A"));
+
         setContentView(R.layout.activity_main);
         pastActionsView = findViewById(R.id.past_actions_view);
-        PopulateActionsListTask populateActionsListTask = new PopulateActionsListTask();
-        populateActionsListTask.execute(10);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        statusBar = findViewById(R.id.content);
-        GlobalActionsList.create(this.getApplicationContext().getFilesDir());
-        GlobalActionsList.instance().reloadAll();
 
-        statusBarHandler = new Handler(Looper.getMainLooper(), message -> {
-            String text = (String)message.obj;
-            statusBar.setText(text);
-            return true;
-        });
+        createGlobalLists();
+        PopulateActionsListTask populateActionsListTask = new PopulateActionsListTask();
+        populateActionsListTask.execute(10);
 
+        statusBar = findViewById(R.id.activity_main_status_bar);
         new Thread(this::showClientVersion).start();
     }
 
+    private void createGlobalLists() {
+        File rootDir = this.getApplicationContext().getFilesDir();
+        File actionsDir = new File(rootDir.getAbsolutePath() + "/actions");
+        if (!(actionsDir.exists())) {
+            if (!actionsDir.mkdir()) throw new RuntimeException("Actions directory could not be created");
+        }
+        GlobalActionsList.create(actionsDir);
+        GlobalActionsList.instance().reloadAll();
+        File accountsDir = new File(rootDir.getAbsolutePath() + "/accounts");
+        if (!(accountsDir.exists())) {
+            if (!accountsDir.mkdir()) throw new RuntimeException("Accounts directory could not be created");
+        }
+        GlobalAccountManager.create(accountsDir);
+        GlobalAccountManager.instance().reloadAll();
+    }
+
+    private void ensureInitWeb3() {
+        if (web3 == null) {
+            web3 = Web3jFactory.build(new HttpService( "https://ropsten.infura.io/tmbhNp6pHaBMdPKYsP7A"));
+        }
+    }
     private void initActionsList(List<? extends PastAction> pastActions) {
         List<Map<String, String>> data = new ArrayList<>();
         for (PastAction pastAction : pastActions) {
@@ -88,12 +98,12 @@ public class MainActivity extends AppCompatActivity {
             }
             return true;
         });
-        // Bind to our new adapter.pter(adapter);
 
         pastActionsView.post(() -> pastActionsView.setAdapter(adapter));
     }
 
     private void showClientVersion() {
+        ensureInitWeb3();
         Web3ClientVersion web3ClientVersion = null;
         try {
             web3ClientVersion = web3.web3ClientVersion().sendAsync().get();
@@ -104,11 +114,10 @@ public class MainActivity extends AppCompatActivity {
         }
         String clientVersion = (web3ClientVersion == null) ?
                 "Could not get client version. Are you connected?" : web3ClientVersion.getWeb3ClientVersion();
-        Message completeMessage =
-                statusBarHandler.obtainMessage(0, clientVersion);
-        completeMessage.sendToTarget();
+        statusBar.post(() -> statusBar.setText(clientVersion));
     }
 
+    @SuppressLint("StaticFieldLeak")
     private class PopulateActionsListTask extends AsyncTask<Integer, Integer, Integer> {
         // Do the long-running work in here
         protected Integer doInBackground(Integer... pastBlocks) {
@@ -128,33 +137,40 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private List<PastAction> getPastActions() {
-        List<PastAction> actions = GlobalActionsList.instance().getPastActionList();
-        return actions;
-    }
-
     private List<TransactionAction> getPastTransactions(long pastBlocks) {
-        List<TransactionAction> transactionActionList = new ArrayList<TransactionAction>((int)pastBlocks*100);
+        ensureInitWeb3();
+        List<TransactionAction> transactionActionList = new ArrayList<>((int) pastBlocks * 100);
         long lastBlockNumber = 0;
         try {
             lastBlockNumber = web3.ethBlockNumber().send().getBlockNumber().longValue();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        EthBlock.Block block = null;
+        EthBlock.Block block;
         for (long l = lastBlockNumber - pastBlocks;l < lastBlockNumber;l++) {
-            try {
-                block = web3.ethGetBlockByNumber(new DefaultBlockParameterNumber(l),
-                        true).send().getBlock();
-                for (EthBlock.TransactionResult<EthBlock.TransactionObject> t : block.getTransactions()) {
-                    transactionActionList.add(new TransactionAction(
-                            "",
-                            new Date(block.getTimestamp().longValue()),
-                            t.get()));
+            for (int tries = 0;tries < 3;tries++)
+                try {
+                    block = web3.ethGetBlockByNumber(new DefaultBlockParameterNumber(l),
+                            true).send().getBlock();
+                    if (block == null) continue;
+                    for (EthBlock.TransactionResult t : block.getTransactions()) {
+                        EthBlock.TransactionObject o = (EthBlock.TransactionObject) t.get();
+                        transactionActionList.add(new TransactionAction(
+                                "",
+                                new Date(block.getTimestamp().longValue()),
+                                new Transaction(
+                                        o.getFrom(),
+                                        o.getNonce(),
+                                        o.getGasPrice(),
+                                        o.getGas(),
+                                        o.getTo(),
+                                        o.getValue(),
+                                        o.getInput()
+                                )));
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
         return transactionActionList;
     }
@@ -179,9 +195,5 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    public static Context getContext() {
-        return context;
     }
 }

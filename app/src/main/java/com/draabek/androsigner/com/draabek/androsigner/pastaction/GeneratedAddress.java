@@ -3,8 +3,8 @@ package com.draabek.androsigner.com.draabek.androsigner.pastaction;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 
-import com.draabek.androsigner.MainActivity;
 import com.draabek.androsigner.R;
+import com.draabek.androsigner.SignerApplication;
 
 import java.text.DateFormat;
 import java.util.Date;
@@ -17,7 +17,7 @@ import java.util.Map;
  */
 
 public class GeneratedAddress extends PastAction {
-    String address;
+    final String address;
 
     public GeneratedAddress(Date date, String appName, String address) {
         super(appName, date);
@@ -30,7 +30,7 @@ public class GeneratedAddress extends PastAction {
 
     @Override
      public Map<String, String> getDetails() {
-        Context context = MainActivity.getContext();
+        Context context = SignerApplication.getContext();
         Map<String,String> myMap = new HashMap<>();
         myMap.put(context.getString(R.string.date), DateFormat.getDateInstance().format(date));
         myMap.put(context.getString(R.string.app), appName);
@@ -40,6 +40,6 @@ public class GeneratedAddress extends PastAction {
 
     @Override
     public Drawable getIcon() {
-        return MainActivity.getContext().getResources().getDrawable(android.R.drawable.ic_input_add);
+        return SignerApplication.getContext().getResources().getDrawable(android.R.drawable.ic_input_add);
     }
 }

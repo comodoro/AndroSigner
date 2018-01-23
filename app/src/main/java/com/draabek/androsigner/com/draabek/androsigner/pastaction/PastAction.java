@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.Map;
 
 /**
+ * A base class for action sent to the signer and confirmed by the user
  * Created by Vojta on 30.12.2017.
  */
 

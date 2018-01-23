@@ -19,8 +19,8 @@ class GlobalAccountManager {
 
     private static GlobalAccountManager globalAccountManager;
 
-    private File rootDir;
-    private Map<String, String> savedAccounts;
+    private final File rootDir;
+    private final Map<String, String> savedAccounts;
 
     public static void create(File rootDir) {
         if (globalAccountManager != null) {
@@ -68,5 +68,9 @@ class GlobalAccountManager {
 
     public Collection<String> getAddresses() {
         return savedAccounts.keySet();
+    }
+
+    public File getRootDir() {
+        return rootDir;
     }
 }
