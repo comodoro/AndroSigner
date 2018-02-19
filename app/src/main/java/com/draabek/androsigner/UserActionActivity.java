@@ -57,7 +57,7 @@ public class UserActionActivity extends AppCompatActivity {
         noButton = findViewById(R.id.user_action_no);
 
         web3j = Web3jFactory.build(
-                new HttpService( "https://ropsten.infura.io/tmbhNp6pHaBMdPKYsP7A")
+                new HttpService( SignerApplication.getConfig().getEndpoint())
         );
 
 
@@ -67,27 +67,29 @@ public class UserActionActivity extends AppCompatActivity {
 
         if (Intent.ACTION_SEND.equals(action) && type != null) {
             if ("text/plain".equals(type)) {
-                String extra = intent.getStringExtra("command");
+                String extra = intent.getStringExtra(Constants.INTENT_KEY_COMMAND);
                 String appName = intent.getPackage();
                 switch (extra) {
-                    case "generate": {
-                        String pwd = intent.getStringExtra("password");
+                    case Constants.COMMAND_GENERATE_ADDRESS: {
+                        String pwd = intent.getStringExtra(Constants.INTENT_PASSWORD);
                         handleAddressGeneration(appName, pwd);
                         break;
                     }
-                    case "transact": {
-                        String pwd = intent.getStringExtra("password");
-                        String from = intent.getStringExtra("from");
-                        String to = intent.getStringExtra("to");
-                        BigInteger value = new BigInteger(intent.getStringExtra("value"));
+                    case Constants.COMMAND_CONFIRM_TRANSACTION: {
+                        String pwd = intent.getStringExtra(Constants.INTENT_PASSWORD);
+                        String from = intent.getStringExtra(Constants.INTENT_FROM);
+                        String to = intent.getStringExtra(Constants.INTENT_TO);
+                        BigInteger value = new BigInteger(intent.getStringExtra(Constants.INTENT_VALUE));
                         //TODO pass unencoded function
-                        String data = intent.getStringExtra("data");
-                        BigInteger gasPrice = BigInteger.valueOf(intent.getLongExtra("gasPrice", 0));
-                        BigInteger gasLimit = BigInteger.valueOf(intent.getLongExtra("gasPrice", 0));
+                        String data = intent.getStringExtra(Constants.INTENT_DATA);
+                        BigInteger gasPrice = BigInteger.valueOf(
+                                intent.getLongExtra(Constants.INTENT_GAS_PRICE, 0));
+                        BigInteger gasLimit = BigInteger.valueOf(
+                                intent.getLongExtra(Constants.INTENT_GAS_LIMIT, 0));
                         handleTransaction(appName, from, pwd, to, value, data, gasPrice, gasLimit);
                         break;
                     }
-                    case "sign":
+                    case Constants.COMMAND_SIGN_MESSAGE:
                         handleBadInput(appName);
                         break;
                     default:
@@ -140,24 +142,24 @@ public class UserActionActivity extends AppCompatActivity {
                 String txHash;
                 try {
                     txHash = signAndSend(from, pwd, to, value, data, gasPrice, gasLimit);
-                    Intent result = new Intent("com.draabek.androsigner.RESULT_ACTION");
+                    Intent result = new Intent(Constants.INTENT_RESULT_DESCRIPTION);
                     GlobalActionsList.instance().append(transactionAction);
-                    result.putExtra("txhash", txHash);
+                    result.putExtra(Constants.RETURN_TRANSACTION_HASH, txHash);
                     setResult(Activity.RESULT_OK, result);
                 } catch (IOException e) {
                     e.printStackTrace();
-                    Intent result = new Intent("com.draabek.androsigner.RESULT_ACTION");
+                    Intent result = new Intent(Constants.INTENT_RESULT_DESCRIPTION);
                     setResult(Activity.RESULT_CANCELED, result);
-                    result.putExtra("reason", e.toString());
+                    result.putExtra(Constants.INTENT_FAILURE_REASON, e.toString());
                  }
                 finish();
             }
 
             @Override
             public void reject() {
-                Intent result = new Intent("com.draabek.androsigner.RESULT_ACTION");
+                Intent result = new Intent(Constants.INTENT_RESULT_DESCRIPTION);
                 setResult(Activity.RESULT_CANCELED, result);
-                result.putExtra("reason", "cancelled");
+                result.putExtra(Constants.INTENT_FAILURE_REASON, Constants.INTENT_FAILURE_REASON_CANCELLED);
                 finish();
             }
         });
@@ -222,18 +224,19 @@ public class UserActionActivity extends AppCompatActivity {
         confirmOrRejectAction(new ConfirmAction() {
             @Override
             public void confirm() {
-                Intent result = new Intent("com.draabek.androsigner.RESULT_ACTION");
+                Intent result = new Intent(Constants.INTENT_RESULT_DESCRIPTION);
                 GlobalActionsList.instance().append(generatedAddress);
                 // GlobalAccountManager only needs to reload
                 GlobalAccountManager.instance().reloadAll();
-                result.putExtra("generated_address", generatedAddressString);
+                result.putExtra(Constants.RETURN_GENERATED_ADDRESS, generatedAddressString);
                 setResult(Activity.RESULT_OK, result);
                 finish();
             }
 
             @Override
             public void reject() {
-                Intent result = new Intent("com.draabek.androsigner.RESULT_ACTION");
+                Intent result = new Intent(Constants.INTENT_RESULT_DESCRIPTION);
+                result.putExtra(Constants.INTENT_FAILURE_REASON, Constants.INTENT_FAILURE_REASON_CANCELLED);
                 setResult(Activity.RESULT_CANCELED, result);
                 finish();
             }
@@ -242,7 +245,7 @@ public class UserActionActivity extends AppCompatActivity {
 
     private void handleBadInput(String app) {
         Log.w(LOG_KEY, "Bad input from " + app);
-        Intent result = new Intent("com.draabek.androsigner.RESULT_ACTION");
+        Intent result = new Intent(Constants.INTENT_RESULT_DESCRIPTION);
         setResult(Activity.RESULT_CANCELED, result);
         finish();
     }

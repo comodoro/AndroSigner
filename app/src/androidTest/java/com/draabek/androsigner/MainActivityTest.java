@@ -33,7 +33,7 @@ public class MainActivityTest {
 
     @Test
     public void mainActivityTest() {
-        String statusBar=getText(withId(R.id.activity_main_status_bar));
+        String statusBar = getText(withId(R.id.activity_main_status_bar));
         Assert.assertNotNull(statusBar);
         Assert.assertTrue("Statusbar contains version string with slashes",
                 statusBar.contains("/"));

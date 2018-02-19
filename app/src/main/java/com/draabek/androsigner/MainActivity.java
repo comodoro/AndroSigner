@@ -74,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void ensureInitWeb3() {
         if (web3 == null) {
-            web3 = Web3jFactory.build(new HttpService( "https://ropsten.infura.io/tmbhNp6pHaBMdPKYsP7A"));
+            web3 = Web3jFactory.build(new HttpService( SignerApplication.getConfig().getEndpoint()));
         }
     }
     private void initActionsList(List<? extends PastAction> pastActions) {

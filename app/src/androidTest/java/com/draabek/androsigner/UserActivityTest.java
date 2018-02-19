@@ -24,6 +24,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.web3j.protocol.admin.Admin;
+import org.web3j.protocol.admin.AdminFactory;
+import org.web3j.protocol.http.HttpService;
+
+import java.io.IOException;
+import java.util.List;
 
 import static android.support.test.espresso.Espresso.onView;
 import static android.support.test.espresso.action.ViewActions.click;
@@ -44,22 +50,29 @@ public class UserActivityTest {
     public static TemporaryFolder accountsFolder = new TemporaryFolder();
 
     @BeforeClass
-    public static void setUp() throws Exception {
+    public static void setUp() {
         GlobalActionsList.create(actionsFolder.getRoot());
         GlobalAccountManager.create(accountsFolder.getRoot());
+
     }
 
     @Rule
-    public ActivityTestRule<UserActionActivity> mActivityTestRule = new ActivityTestRule<>(
+    public MyCustomRule<UserActionActivity> mActivityTestRule = new MyCustomRule<>(
             UserActionActivity.class, true, false);
 
+    private String getUnlockedAddress() throws IOException {
+        Admin admin = AdminFactory.build(new HttpService("http://10.0.2.2:8545"));
+        List<String> accounts = admin.personalListAccounts().send().getAccountIds();
+        return accounts.get(0);
+    }
+
     @Test
-    public void userActivityTestGeneratedAddress() {
+    public void userActivityTestGenerateAddress() {
         Intent intent = new Intent();
         intent.setAction(Intent.ACTION_SEND);
         intent.setType("text/plain");
-        intent.putExtra("command", "generate");
-        intent.putExtra("password", "12345");
+        intent.putExtra(Constants.INTENT_KEY_COMMAND, Constants.COMMAND_GENERATE_ADDRESS);
+        intent.putExtra(Constants.INTENT_PASSWORD, "12345");
         intent.setPackage("com.sample.test");
         mActivityTestRule.launchActivity(intent);
         ViewInteraction actionMenuItemView = onView(
@@ -68,9 +81,36 @@ public class UserActivityTest {
         actionMenuItemView.perform(click());
         assertThat(mActivityTestRule.getActivityResult(), hasResultCode(Activity.RESULT_OK));
         assertThat(mActivityTestRule.getActivityResult(),
-                hasResultData(IntentMatchers.hasExtraWithKey("generated_address")));
+                hasResultData(IntentMatchers.hasExtraWithKey(Constants.RETURN_GENERATED_ADDRESS)));
         String address = mActivityTestRule.getActivityResult()
-                .getResultData().getStringExtra("generated_address");
+                .getResultData().getStringExtra(Constants.RETURN_GENERATED_ADDRESS);
+        Assert.assertTrue(GlobalAccountManager.instance().getAddresses().contains(address));
+
+    }
+    @Test
+    public void userActivityTestTransaction() throws IOException {
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        intent.putExtra(Constants.INTENT_KEY_COMMAND, Constants.COMMAND_CONFIRM_TRANSACTION);
+        intent.putExtra(Constants.INTENT_PASSWORD, "12345");
+        String from = getUnlockedAddress();
+        intent.putExtra(Constants.INTENT_FROM, from);
+        intent.putExtra(Constants.INTENT_TO, "12345");
+        intent.putExtra(Constants.INTENT_DATA, "12345");
+        intent.putExtra(Constants.INTENT_GAS_LIMIT, 200000);
+        intent.putExtra(Constants.INTENT_GAS_PRICE, 0);
+        intent.setPackage("com.sample.test");
+        mActivityTestRule.launchActivity(intent);
+        ViewInteraction actionMenuItemView = onView(
+                allOf(withId(R.id.user_action_yes),
+                        isDisplayed()));
+        actionMenuItemView.perform(click());
+        assertThat(mActivityTestRule.getActivityResult(), hasResultCode(Activity.RESULT_OK));
+        assertThat(mActivityTestRule.getActivityResult(),
+                hasResultData(IntentMatchers.hasExtraWithKey(Constants.RETURN_GENERATED_ADDRESS)));
+        String address = mActivityTestRule.getActivityResult()
+                .getResultData().getStringExtra(Constants.RETURN_GENERATED_ADDRESS);
         Assert.assertTrue(GlobalAccountManager.instance().getAddresses().contains(address));
 
     }
@@ -92,5 +132,17 @@ public class UserActivityTest {
                         && view.equals(((ViewGroup) parent).getChildAt(position));
             }
         };
+    }
+
+    static class MyCustomRule<A extends UserActionActivity> extends ActivityTestRule<A> {
+        public MyCustomRule(Class<A> activityClass, boolean b1, boolean b2) {
+            super(activityClass, b1, b2);
+        }
+
+        @Override
+        protected void afterActivityLaunched() {
+            super.afterActivityLaunched();
+            SignerApplication.getConfig().setEndpoint("http://10.0.2.2:8545");
+        }
     }
 }
