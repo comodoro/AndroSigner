@@ -1,7 +1,8 @@
 package com.draabek.androsigner;
 
-import com.draabek.androsigner.com.draabek.androsigner.pastaction.GeneratedAddress;
-import com.draabek.androsigner.com.draabek.androsigner.pastaction.GlobalActionsList;
+import com.draabek.androsigner.pastaction.GeneratedAddress;
+import com.draabek.androsigner.pastaction.GlobalActionsList;
+import com.draabek.androsigner.pastaction.PastAction;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -23,12 +24,12 @@ public class GlobalActionsListTest {
     @BeforeClass
     public static void setUp() throws Exception {
         GlobalActionsList.create(folder.getRoot());
-        GlobalActionsList.instance().append(new GeneratedAddress(new Date(), "debug", "0x123"));
+        GlobalActionsList.instance().append(new GeneratedAddress(new Date(), "debug", PastAction.State.CONFIRMED, "0x123"));
     }
 
     @Test
     public void append() throws Exception {
-        GlobalActionsList.instance().append(new GeneratedAddress(new Date(), "debug", "0x234"));
+        GlobalActionsList.instance().append(new GeneratedAddress(new Date(), "debug", PastAction.State.CONFIRMED,"0x234"));
         Assert.assertEquals(2, GlobalActionsList.instance().getPastActionList().size());
         Assert.assertEquals(2, folder.getRoot().listFiles().length);
     }

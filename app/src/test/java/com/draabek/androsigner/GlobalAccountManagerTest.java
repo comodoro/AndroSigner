@@ -3,8 +3,11 @@ package com.draabek.androsigner;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
+import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.WalletUtils;
 
@@ -19,20 +22,31 @@ import java.util.List;
  */
 public class GlobalAccountManagerTest {
 
+    @Rule
+    public final ExpectedException exception = ExpectedException.none();
+
     @ClassRule
     public static TemporaryFolder folder = new TemporaryFolder();
 
     @BeforeClass
     public static void setUp() throws Exception {
         GlobalAccountManager.create(folder.getRoot());
-
     }
+
     @Test
-    public void getCredentials() throws Exception {
+    public void correctCredentials() throws Exception {
         String source = WalletUtils.generateFullNewWalletFile("1234", folder.getRoot());
         File sourceFile = new File(folder.getRoot(), source);
         Credentials credentials = WalletUtils.loadCredentials("1234", sourceFile);
         Assert.assertNotNull(credentials);
+    }
+
+    @Test
+    public void wrongCredentials() throws Exception {
+        String source = WalletUtils.generateFullNewWalletFile("1234", folder.getRoot());
+        File sourceFile = new File(folder.getRoot(), source);
+        exception.expect(CipherException.class);
+        Credentials credentials = WalletUtils.loadCredentials("4321", sourceFile);
     }
 
     @Test

@@ -10,10 +10,21 @@
     <string name="address">Address</string>
     <string name="app">App</string>
     <string name="date">Date</string>
+    <string name="confirmation_state">State</string>
+    <string-array name="state_types">
+        <item>CONFIRMED</item>
+        <item>REJECTED</item>
+        <item>PENDING</item>
+    </string-array>
     <string name="transaction_placeholder"><![CDATA[%s -> %s : %s]]></string>
     <string name="value">Value</string>
     <string name="from">From</string>
     <string name="to">To</string>
     <string name="type_of_action">Type of action</string>
     <string name="details">Details</string>
+    <string name="state">State</string>
+    <string name="user_action_question">Do you want to allow the operation of %s?</string>
+    <string name="user_action_address_generation">address generation</string>
+    <string name="user_action_ethereum_transaction">ethereum transaction</string>
+    <string name="sign_message_action_message">Message</string>
 </resources>

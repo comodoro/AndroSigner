@@ -1,4 +1,4 @@
-package com.draabek.androsigner.com.draabek.androsigner.pastaction;
+package com.draabek.androsigner.pastaction;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
@@ -19,8 +19,8 @@ import java.util.Map;
 public class GeneratedAddress extends PastAction {
     final String address;
 
-    public GeneratedAddress(Date date, String appName, String address) {
-        super(appName, date);
+    public GeneratedAddress(Date date, String appName, State state, String address) {
+        super(appName, date, state);
         this.address = address;
     }
     @Override
@@ -34,6 +34,7 @@ public class GeneratedAddress extends PastAction {
         Map<String,String> myMap = new HashMap<>();
         myMap.put(context.getString(R.string.date), DateFormat.getDateInstance().format(date));
         myMap.put(context.getString(R.string.app), appName);
+        myMap.put(context.getString(R.string.confirmation_state), context.getResources().getStringArray(R.array.state_types)[state.ordinal()]);
         myMap.put(context.getString(R.string.address), address);
         return myMap;
     }

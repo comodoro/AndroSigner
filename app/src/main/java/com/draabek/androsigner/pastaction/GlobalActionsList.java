@@ -1,4 +1,4 @@
-package com.draabek.androsigner.com.draabek.androsigner.pastaction;
+package com.draabek.androsigner.pastaction;
 
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -32,12 +32,13 @@ public class GlobalActionsList {
     public static void create(File storeDir) {
         if (globalActionsList != null) {
             if (storeDir.equals(GlobalActionsList.instance().rootDir)) {
-                //throw new RuntimeException("Global actions list already created with the same root dir!");
                 Log.w(GlobalActionsList.class.getName(), "Global actions list already created with the same root dir!");
+            } else {
+                throw new RuntimeException("Global actions list already created with different root dir!");
             }
-            throw new RuntimeException("Global actions list already created with different root dir!");
+        } else {
+            globalActionsList = new GlobalActionsList(storeDir);
         }
-        globalActionsList = new GlobalActionsList(storeDir);
     }
 
     public static GlobalActionsList instance() {

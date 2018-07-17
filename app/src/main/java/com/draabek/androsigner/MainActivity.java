@@ -11,9 +11,9 @@ import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
-import com.draabek.androsigner.com.draabek.androsigner.pastaction.GlobalActionsList;
-import com.draabek.androsigner.com.draabek.androsigner.pastaction.PastAction;
-import com.draabek.androsigner.com.draabek.androsigner.pastaction.TransactionAction;
+import com.draabek.androsigner.pastaction.GlobalActionsList;
+import com.draabek.androsigner.pastaction.PastAction;
+import com.draabek.androsigner.pastaction.TransactionAction;
 
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.Web3jFactory;
@@ -158,6 +158,7 @@ public class MainActivity extends AppCompatActivity {
                         transactionActionList.add(new TransactionAction(
                                 "",
                                 new Date(block.getTimestamp().longValue()),
+                                PastAction.State.CONFIRMED,
                                 new Transaction(
                                         o.getFrom(),
                                         o.getNonce(),

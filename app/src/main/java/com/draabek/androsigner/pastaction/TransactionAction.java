@@ -1,4 +1,4 @@
-package com.draabek.androsigner.com.draabek.androsigner.pastaction;
+package com.draabek.androsigner.pastaction;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
@@ -24,8 +24,8 @@ import java.util.Map;
 public class TransactionAction extends PastAction {
     private Transaction transaction;
 
-    public TransactionAction(String appName, Date date, Transaction transaction) {
-        super(appName, date);
+    public TransactionAction(String appName, Date date, State state, Transaction transaction) {
+        super(appName, date, state);
         this.transaction = transaction;
     }
 
@@ -48,6 +48,7 @@ public class TransactionAction extends PastAction {
         Map<String,String> myMap = new HashMap<>();
         myMap.put(context.getString(R.string.date), DateFormat.getDateInstance().format(date));
         myMap.put(context.getString(R.string.app), appName);
+        myMap.put(context.getString(R.string.state), context.getResources().getStringArray(R.array.state_types)[state.ordinal()]);
         myMap.put(context.getString(R.string.from), transaction.getFrom());
         myMap.put(context.getString(R.string.to), transaction.getTo());
         myMap.put(context.getString(R.string.value), transaction.getValue());

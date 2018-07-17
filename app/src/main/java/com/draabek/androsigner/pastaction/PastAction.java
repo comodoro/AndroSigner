@@ -1,4 +1,4 @@
-package com.draabek.androsigner.com.draabek.androsigner.pastaction;
+package com.draabek.androsigner.pastaction;
 
 import android.graphics.drawable.Drawable;
 
@@ -13,9 +13,12 @@ import java.util.Map;
 public abstract class PastAction {
     protected Date date;
     protected String appName;
-    public PastAction(String appName, Date date) {
+    protected State state;
+
+    public PastAction(String appName, Date date, State state) {
         this.appName = appName;
         this.date = date;
+        this.state = state;
     }
 
     public abstract String getShortDescription();
@@ -24,5 +27,11 @@ public abstract class PastAction {
 
     public Date getDate() {
         return date;
+    }
+
+    public enum State {
+        CONFIRMED,
+        REJECTED,
+        PENDING
     }
 }

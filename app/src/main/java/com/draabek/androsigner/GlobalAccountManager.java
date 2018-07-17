@@ -1,5 +1,10 @@
 package com.draabek.androsigner;
 
+
+import android.util.Log;
+
+import com.draabek.androsigner.pastaction.GlobalActionsList;
+
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.WalletUtils;
@@ -24,9 +29,14 @@ class GlobalAccountManager {
 
     public static void create(File rootDir) {
         if (globalAccountManager != null) {
-            throw new RuntimeException("Global account manager already created!");
+            if (rootDir.equals(GlobalAccountManager.instance().rootDir)) {
+                Log.w(GlobalActionsList.class.getName(), "Global accounts list already created with the same root dir!");
+            } else {
+                throw new RuntimeException("Global accounts list already created with different root dir!");
+            }
+        } else {
+            globalAccountManager = new GlobalAccountManager(rootDir);
         }
-        globalAccountManager = new GlobalAccountManager(rootDir);
     }
 
     public static GlobalAccountManager instance() {

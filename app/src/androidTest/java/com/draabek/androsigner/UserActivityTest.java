@@ -12,7 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 
-import com.draabek.androsigner.com.draabek.androsigner.pastaction.GlobalActionsList;
+import com.draabek.androsigner.pastaction.GlobalActionsList;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -24,12 +24,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
-import org.web3j.protocol.admin.Admin;
-import org.web3j.protocol.admin.AdminFactory;
-import org.web3j.protocol.http.HttpService;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.List;
+import java.util.Collection;
 
 import static android.support.test.espresso.Espresso.onView;
 import static android.support.test.espresso.action.ViewActions.click;
@@ -51,27 +49,24 @@ public class UserActivityTest {
 
     @BeforeClass
     public static void setUp() {
-        GlobalActionsList.create(actionsFolder.getRoot());
-        GlobalAccountManager.create(accountsFolder.getRoot());
-
+        GlobalActionsList.create(new File(SignerApplication.getContext().getFilesDir()+"/actions"));
+        GlobalAccountManager.create(new File(SignerApplication.getContext().getFilesDir()+"/accounts"));
     }
 
     @Rule
     public MyCustomRule<UserActionActivity> mActivityTestRule = new MyCustomRule<>(
             UserActionActivity.class, true, false);
 
-    private String getUnlockedAddress() throws IOException {
-        Admin admin = AdminFactory.build(new HttpService("http://10.0.2.2:8545"));
-        List<String> accounts = admin.personalListAccounts().send().getAccountIds();
-        return accounts.get(0);
+    private String getFirstAddress() throws IOException {
+        Collection<String> addresses = GlobalAccountManager.instance().getAddresses();
+        return addresses.iterator().next();
     }
 
-    @Test
-    public void userActivityTestGenerateAddress() {
+    private void generateAddress() {
         Intent intent = new Intent();
-        intent.setAction(Intent.ACTION_SEND);
+        intent.setAction(Constants.CONFIRM_REQUEST_ACTION);
         intent.setType("text/plain");
-        intent.putExtra(Constants.INTENT_KEY_COMMAND, Constants.COMMAND_GENERATE_ADDRESS);
+        intent.putExtra(Constants.INTENT_COMMAND, Constants.COMMAND_GENERATE_ADDRESS);
         intent.putExtra(Constants.INTENT_PASSWORD, "12345");
         intent.setPackage("com.sample.test");
         mActivityTestRule.launchActivity(intent);
@@ -79,6 +74,11 @@ public class UserActivityTest {
                 allOf(withId(R.id.user_action_yes),
                         isDisplayed()));
         actionMenuItemView.perform(click());
+    }
+
+    @Test
+    public void userActivityTestGenerateAddress() {
+        generateAddress();
         assertThat(mActivityTestRule.getActivityResult(), hasResultCode(Activity.RESULT_OK));
         assertThat(mActivityTestRule.getActivityResult(),
                 hasResultData(IntentMatchers.hasExtraWithKey(Constants.RETURN_GENERATED_ADDRESS)));
@@ -88,16 +88,18 @@ public class UserActivityTest {
 
     }
     @Test
-    public void userActivityTestTransaction() throws IOException {
+    public void userActivityTestTransactionWithoutGas() throws IOException {
+        generateAddress();
         Intent intent = new Intent();
-        intent.setAction(Intent.ACTION_SEND);
+        intent.setAction(Constants.CONFIRM_REQUEST_ACTION);
         intent.setType("text/plain");
-        intent.putExtra(Constants.INTENT_KEY_COMMAND, Constants.COMMAND_CONFIRM_TRANSACTION);
+        intent.putExtra(Constants.INTENT_COMMAND, Constants.COMMAND_CONFIRM_TRANSACTION);
         intent.putExtra(Constants.INTENT_PASSWORD, "12345");
-        String from = getUnlockedAddress();
+        String from = getFirstAddress();
         intent.putExtra(Constants.INTENT_FROM, from);
         intent.putExtra(Constants.INTENT_TO, "12345");
         intent.putExtra(Constants.INTENT_DATA, "12345");
+        intent.putExtra(Constants.INTENT_VALUE, "0");
         intent.putExtra(Constants.INTENT_GAS_LIMIT, 200000);
         intent.putExtra(Constants.INTENT_GAS_PRICE, 0);
         intent.setPackage("com.sample.test");
@@ -106,13 +108,9 @@ public class UserActivityTest {
                 allOf(withId(R.id.user_action_yes),
                         isDisplayed()));
         actionMenuItemView.perform(click());
-        assertThat(mActivityTestRule.getActivityResult(), hasResultCode(Activity.RESULT_OK));
+        assertThat(mActivityTestRule.getActivityResult(), hasResultCode(Activity.RESULT_CANCELED));
         assertThat(mActivityTestRule.getActivityResult(),
-                hasResultData(IntentMatchers.hasExtraWithKey(Constants.RETURN_GENERATED_ADDRESS)));
-        String address = mActivityTestRule.getActivityResult()
-                .getResultData().getStringExtra(Constants.RETURN_GENERATED_ADDRESS);
-        Assert.assertTrue(GlobalAccountManager.instance().getAddresses().contains(address));
-
+                hasResultData(IntentMatchers.hasExtraWithKey(Constants.INTENT_FAILURE_INSUFFICIENT_GAS)));
     }
 
     private static Matcher<View> childAtPosition(
