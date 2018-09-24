@@ -10,6 +10,8 @@ import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.example.include.Constants;
+
 public class MainActivity extends AppCompatActivity {
 
     TextView output;
@@ -25,10 +27,10 @@ public class MainActivity extends AppCompatActivity {
         Button generate = findViewById(R.id.generate);
         generate.setOnClickListener(view -> {
             if (!checkSignerMissing()) return;
-            Intent signerIntent = new Intent("com.draabek.androsigner.CONFIRM_REQUEST_ACTION");
-            signerIntent.setClassName("com.draabek.androsigner", "com.draabek.androsigner.UserActionActivity");
-            signerIntent.putExtra("INTENT_PASSWORD", "1234");
-            signerIntent.putExtra("INTENT_COMMAND", "COMMAND_GENERATE_ADDRESS");
+            Intent signerIntent = new Intent(Constants.CONFIRM_REQUEST_ACTION);
+            signerIntent.setClassName(Constants.SIGNER_PACKAGE, Constants.SIGNER_CLASS);
+            signerIntent.putExtra(Constants.INTENT_PASSWORD, "1234");
+            signerIntent.putExtra(Constants.INTENT_COMMAND, Constants.COMMAND_GENERATE_ADDRESS);
             signerIntent.setType("text/plain");
             startActivityForResult(signerIntent, 0);
         });
@@ -36,8 +38,8 @@ public class MainActivity extends AppCompatActivity {
         Button transact = findViewById(R.id.transact);
         transact.setOnClickListener(view -> {
             if (!checkSignerMissing()) return;
-            Intent signerIntent = getPackageManager().getLaunchIntentForPackage("com.draabek.androsigner");
-            signerIntent.putExtra("command", "COMMAND_SEND_TRANSACTION");
+            Intent signerIntent = getPackageManager().getLaunchIntentForPackage(Constants.SIGNER_PACKAGE);
+            signerIntent.putExtra(Constants.INTENT_COMMAND, Constants.COMMAND_CONFIRM_TRANSACTION);
             //TODO put parameters
             //TODO obtain gas
             startActivityForResult(signerIntent, 1);
@@ -46,8 +48,8 @@ public class MainActivity extends AppCompatActivity {
         Button sign = findViewById(R.id.sign);
         sign.setOnClickListener(view -> {
             if (!checkSignerMissing()) return;
-            Intent signerIntent = getPackageManager().getLaunchIntentForPackage("com.draabek.androsigner");
-            signerIntent.putExtra("command", "COMMAND_SIGN_MESSAGE");
+            Intent signerIntent = getPackageManager().getLaunchIntentForPackage(Constants.SIGNER_PACKAGE);
+            signerIntent.putExtra(Constants.INTENT_COMMAND, Constants.COMMAND_SIGN_MESSAGE);
             //TODO put parameters
             startActivityForResult(signerIntent, 2);
         });
@@ -57,8 +59,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == 0) {
             if (resultCode == RESULT_OK) {
-                String address = data.getStringExtra("RETURN_GENERATED_ADDRESS");
-                String mnemonic = data.getStringExtra("RETURN_ADDRESS_MNEMONIC");
+                String address = data.getStringExtra(Constants.RETURN_GENERATED_ADDRESS);
+                String mnemonic = data.getStringExtra(Constants.RETURN_ADDRESS_MNEMONIC);
                 output.setText("Got address " + address + " with mnemonic " + mnemonic);
             }
         }
@@ -74,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean checkSignerMissing() {
-        if (!(isPackageInstalled("com.draabek.androsigner", getPackageManager()))) {
+        if (!isPackageInstalled(Constants.SIGNER_PACKAGE, getPackageManager())) {
             //todo prompt to install
             output.setText("Signer not found.");
             return false;

@@ -24,8 +24,8 @@ import java.util.Map;
 public class TransactionAction extends PastAction {
     private Transaction transaction;
 
-    public TransactionAction(String appName, Date date, State state, Transaction transaction) {
-        super(appName, date, state);
+    public TransactionAction(String originActivity, Date date, State state, Transaction transaction) {
+        super(originActivity, date, state);
         this.transaction = transaction;
     }
 

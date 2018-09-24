@@ -1,4 +1,4 @@
-package com.draabek.androsigner;
+package com.example.include;
 
 /**
  * com.draabek.androsigner.Constants used throughout the app
@@ -6,6 +6,9 @@ package com.draabek.androsigner;
  */
 
 public class Constants {
+    public static final String MASTER_ALIAS = "MASTER";
+    public static final String SIGNER_PACKAGE = "com.draabek.androsigner.debug";
+    public static final String SIGNER_CLASS = "com.draabek.androsigner.UserActionActivity";
     public static final String INTENT_RESULT_DESCRIPTION = "com.draabek.androsigner.RESULT_ACTION";
     public static final String CONFIRM_REQUEST_ACTION = "com.draabek.androsigner.CONFIRM_REQUEST_ACTION";
     public static final String COMMAND_GENERATE_ADDRESS = "COMMAND_GENERATE_ADDRESS";
@@ -19,6 +22,7 @@ public class Constants {
     public static final String RETURN_ADDRESS_MNEMONIC = "RETURN_ADDRESS_MNEMONIC";
     public static final String RETURN_TRANSACTION_HASH = "RETURN_TRANSACTION_HASH";
     public static final String INTENT_COMMAND = "INTENT_COMMAND";
+    public static final String INTENT_CALLING_ACTIVITY = "INTENT_CALLING_ACTIVITY";
     public static final String INTENT_PASSWORD = "INTENT_PASSWORD";
     public static final String INTENT_FROM = "INTENT_FROM";
     public static final String INTENT_TO = "INTENT_TO";
@@ -37,5 +41,6 @@ public class Constants {
     public static final String INTENT_MESSAGE = "INTENT_MESSAGE";
     public static final String INTENT_MESSAGE_SIGNATURE = "INTENT_MESSAGE_SIGNATURE";
     public static final String INTENT_ACCOUNT_BALANCE = "INTENT_ACCOUNT_BALANCE";
+    public static final String INTENT_WAIT_FOR_RESULT = "INTENT_WAIT_FOR_RESULT";
 }
 

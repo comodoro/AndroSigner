@@ -1,6 +1,7 @@
 package com.draabek.androsigner;
 
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -13,7 +14,9 @@ import com.draabek.androsigner.pastaction.AccountListAction;
 import com.draabek.androsigner.pastaction.GeneratedAddress;
 import com.draabek.androsigner.pastaction.GlobalActionsList;
 import com.draabek.androsigner.pastaction.PastAction;
+import com.draabek.androsigner.pastaction.SignMessageAction;
 import com.draabek.androsigner.pastaction.TransactionAction;
+import com.example.include.Constants;
 
 import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.TypeReference;
@@ -32,7 +35,6 @@ import org.web3j.protocol.Web3jFactory;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.EthGetTransactionCount;
 import org.web3j.protocol.http.HttpService;
-import org.web3j.tx.RawTransactionManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,6 +44,9 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+
+import go.error;
+import jnr.posix.WString;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -77,73 +82,63 @@ public class UserActionActivity extends AppCompatActivity {
         if (Constants.CONFIRM_REQUEST_ACTION.equals(action)) {
             if ("text/plain".equals(type)) {
                 String extra = intent.getStringExtra(Constants.INTENT_COMMAND);
-                String appName = intent.getPackage();
-                Log.v(LOG_KEY, String.format("Received command %s from package %s", extra, appName));
+                ComponentName activityComponent = getCallingActivity();
+                String activity = (activityComponent != null)? activityComponent.getClassName() : null;
+                Log.v(LOG_KEY, String.format("Received command %s from activity %s", extra, activity));
                 switch (extra) {
                     case Constants.COMMAND_GENERATE_ADDRESS: {
                         String pwd = intent.getStringExtra(Constants.INTENT_PASSWORD);
-                        handleAddressGeneration(appName, pwd);
+                        handleAddressGeneration(activity, pwd);
                         break;
                     }
                     case Constants.COMMAND_CONFIRM_TRANSACTION: {
-                        String pwd = intent.getStringExtra(Constants.INTENT_PASSWORD);
-                        String from = intent.getStringExtra(Constants.INTENT_FROM);
-                        String to = intent.getStringExtra(Constants.INTENT_TO);
-                        BigInteger value = new BigInteger(intent.getStringExtra(Constants.INTENT_VALUE));
-                        //TODO pass unencoded function
-                        String data = intent.getStringExtra(Constants.INTENT_DATA);
-                        BigInteger gasPrice = BigInteger.valueOf(
-                                intent.getLongExtra(Constants.INTENT_GAS_PRICE, 0));
-                        BigInteger gasLimit = BigInteger.valueOf(
-                                intent.getLongExtra(Constants.INTENT_GAS_LIMIT, 0));
-                        handleTransaction(appName, from, pwd, to, value, data, gasPrice, gasLimit);
-                        break;
+                        boolean waitForResult = intent.hasExtra(Constants.INTENT_WAIT_FOR_RESULT);
+//TODO
+//                        if (waitForResult) {
+//                            intent.setClass(this, TransactionService.class);
+//                            intent.putExtra(Constants.INTENT_CALLING_ACTIVITY, activity);
+//                            startService(intent);
+//                        } else {
+                            handleTransaction(activity, intent);
+//                        }
                     }
-
+                    break;
                     case Constants.COMMAND_SIGN_MESSAGE:
                         String message = intent.getStringExtra(Constants.INTENT_MESSAGE);
                         String account = intent.getStringExtra(Constants.INTENT_ACCOUNT);
                         String password = intent.getStringExtra(Constants.INTENT_PASSWORD);
-                        handleSignMessage(appName, message, account, password);
-                        break;
-
-                        //TODO remove
-                    case Constants.COMMAND_CONFIRM_TRANSFER:
-                        String pwd = intent.getStringExtra(Constants.INTENT_PASSWORD);
-                        String from = intent.getStringExtra(Constants.INTENT_FROM);
-                        String to = intent.getStringExtra(Constants.INTENT_TO);
-                        BigInteger value = new BigInteger(intent.getStringExtra(Constants.INTENT_VALUE));
-                        BigInteger gasPrice = BigInteger.valueOf(
-                                intent.getLongExtra(Constants.INTENT_GAS_PRICE, 0));
-                        BigInteger gasLimit = BigInteger.valueOf(
-                                intent.getLongExtra(Constants.INTENT_GAS_LIMIT, 0));
-                        handleTransaction(appName, from, pwd, to, value, "", gasPrice, gasLimit);
+                        handleSignMessage(activity, message, account, password);
                         break;
 
                     case Constants.COMMAND_LIST_ADDRESSES:
-                        handleListAccounts(appName);
+                        handleListAccounts(activity);
                         break;
                 
                     case Constants.COMMAND_GET_BALANCE:
                         String accountToView = intent.getStringExtra(Constants.INTENT_ACCOUNT);
-                        handleGetBalance(appName, accountToView);
+                        handleGetBalance(activity, accountToView);
                         break;
                         
                     default:
-                        handleError(appName, Constants.INTENT_FAILURE_REASON_UNKNOWN_ERROR);
+                        handleError(activity, Constants.INTENT_FAILURE_REASON_UNKNOWN_ERROR);
                         break;
                 }
             }
         }
     }
 
-    private void handleGetBalance(String appName, String account) {
+    /**
+     *
+     * @param activity
+     * @param account
+     */
+    private void handleGetBalance(String activity, String account) {
         confirmOrRejectAction(new ConfirmAction() {
             @Override
             public void confirm() {
                 Intent result = new Intent(Constants.INTENT_RESULT_DESCRIPTION);
-                BigInteger balaceInWei = getBalanceWei(account);
-                result.putExtra(Constants.INTENT_ACCOUNT_BALANCE, balaceInWei.toString());
+                BigInteger balanceInWei = getBalanceWei(account);
+                result.putExtra(Constants.INTENT_ACCOUNT_BALANCE, balanceInWei.toString());
                 setResult(Activity.RESULT_OK, result);
                 finish();
             }
@@ -158,7 +153,7 @@ public class UserActionActivity extends AppCompatActivity {
         });
     }
 
-    private void handleSignMessage(String appName, String message, String account, String password) {
+    private void handleSignMessage(String activity, String message, String account, String password) {
         confirmOrRejectAction(new ConfirmAction() {
             @Override
             public void confirm() {
@@ -167,6 +162,8 @@ public class UserActionActivity extends AppCompatActivity {
                 Intent result = new Intent(Constants.INTENT_RESULT_DESCRIPTION);
                 result.putExtra(Constants.INTENT_MESSAGE_SIGNATURE, signatureData.hashCode());
                 setResult(Activity.RESULT_OK, result);
+                GlobalActionsList.instance().append(new SignMessageAction(activity, new Date(),
+                        PastAction.State.CONFIRMED, message, account));
                 finish();
             }
 
@@ -180,12 +177,12 @@ public class UserActionActivity extends AppCompatActivity {
         });
     }
 
-    private void handleListAccounts(String appName) {
+    private void handleListAccounts(String activity) {
         confirmOrRejectAction(new ConfirmAction() {
             @Override
             public void confirm() {
                 Intent result = new Intent(Constants.INTENT_RESULT_DESCRIPTION);
-                AccountListAction accountListAction = new AccountListAction(appName, new Date(), PastAction.State.CONFIRMED);
+                AccountListAction accountListAction = new AccountListAction(activity, new Date(), PastAction.State.CONFIRMED);
                 GlobalActionsList.instance().append(accountListAction);
                 String[] accounts = GlobalAccountManager.instance().getAddresses().toArray(new String[0]);
                 result.putExtra(Constants.RETURN_ACCOUNT_LIST, accounts);
@@ -238,12 +235,24 @@ public class UserActionActivity extends AppCompatActivity {
                 outputParameters);
 
         return FunctionEncoder.encode(function);
-
     }
 
-    private void handleTransaction(String appName, String from, String pwd, String to, BigInteger value, String data,
-                                   BigInteger gasPrice, BigInteger gasLimit) {
+    private void handlePubkey() {
+        Intent result = new Intent(Constants.INTENT_RESULT_DESCRIPTION);
+        result.putExtra(Constants.RETURN_TRANSACTION_HASH, "mock hash");
+        setResult(Activity.RESULT_OK, result);
+    }
 
+    private void handleTransaction(String activity, Intent intent) {
+        String password = intent.getStringExtra(Constants.INTENT_PASSWORD);
+        String from = intent.getStringExtra(Constants.INTENT_FROM);
+        String to = intent.getStringExtra(Constants.INTENT_TO);
+        BigInteger value = new BigInteger(intent.getStringExtra(Constants.INTENT_VALUE));
+        //TODO pass unencoded function ABI (to be transparent)
+        String data = intent.getStringExtra(Constants.INTENT_DATA);
+        BigInteger gasPrice = new BigInteger(intent.getStringExtra(Constants.INTENT_GAS_PRICE));
+        BigInteger gasLimit = new BigInteger(intent.getStringExtra(Constants.INTENT_GAS_LIMIT));
+        askView.setText(String.format(getString(R.string.user_action_question), getString(R.string.user_action_ethereum_transaction)));
         EthGetTransactionCount ethGetTransactionCount = null;
         try {
             ethGetTransactionCount = web3j.ethGetTransactionCount(
@@ -253,7 +262,6 @@ public class UserActionActivity extends AppCompatActivity {
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
-
         BigInteger nonce;
         if (ethGetTransactionCount == null) {
             nonce = new BigInteger("0");
@@ -262,34 +270,26 @@ public class UserActionActivity extends AppCompatActivity {
         }
         org.web3j.protocol.core.methods.request.Transaction transaction =
                 org.web3j.protocol.core.methods.request.Transaction.createFunctionCallTransaction(
-                        from, nonce, gasPrice, gasLimit, to, value, data
+                        from, nonce, gasPrice, gasLimit, to,
+                        value, data
                 );
-        askView.setText(String.format(getString(R.string.user_action_question), getString(R.string.user_action_ethereum_transaction)));
         confirmOrRejectAction(new ConfirmAction() {
             @Override
             public void confirm(){
-                String txHash;
-                try {
-                    signAndSend(nonce, from, pwd, to, value, data, gasPrice, gasLimit);
-                    Intent result = new Intent(Constants.INTENT_RESULT_DESCRIPTION);
-                    TransactionAction transactionAction = new TransactionAction(appName, new Date(), PastAction.State.CONFIRMED, transaction);
-                    GlobalActionsList.instance().append(transactionAction);
-                    //todo txhash is bound to sending the transaction in web3j, get it another way
-                    //result.putExtra(Constants.RETURN_TRANSACTION_HASH, txHash);
-                    result.putExtra(Constants.RETURN_TRANSACTION_HASH, "mock hash");
-                    setResult(Activity.RESULT_OK, result);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    Intent result = new Intent(Constants.INTENT_RESULT_DESCRIPTION);
-                    setResult(Activity.RESULT_CANCELED, result);
-                    result.putExtra(Constants.INTENT_FAILURE_REASON, e.toString());
-                 }
+                signAndSend(nonce, from, password, to, value, data, gasPrice, gasLimit);
+                Intent result = new Intent(Constants.INTENT_RESULT_DESCRIPTION);
+                TransactionAction transactionAction = new TransactionAction(activity, new Date(), PastAction.State.CONFIRMED, transaction);
+                GlobalActionsList.instance().append(transactionAction);
+                //todo txhash is bound to sending the transaction in web3j, get it another way
+                //result.putExtra(Constants.RETURN_TRANSACTION_HASH, txHash);
+                result.putExtra(Constants.RETURN_TRANSACTION_HASH, "mock hash");
+                setResult(Activity.RESULT_OK, result);
                 finish();
             }
 
             @Override
             public void reject() {
-                TransactionAction transactionAction = new TransactionAction(appName, new Date(), PastAction.State.REJECTED, transaction);
+                TransactionAction transactionAction = new TransactionAction(activity, new Date(), PastAction.State.REJECTED, transaction);
                 GlobalActionsList.instance().append(transactionAction);
                 Intent result = new Intent(Constants.INTENT_RESULT_DESCRIPTION);
                 setResult(Activity.RESULT_CANCELED, result);
@@ -300,7 +300,7 @@ public class UserActionActivity extends AppCompatActivity {
     }
 
     private void signAndSend(BigInteger nonce, String from, String pwd, String to, BigInteger value, String data,
-                                            BigInteger gasPrice, BigInteger gasLimit) throws IOException {
+                                            BigInteger gasPrice, BigInteger gasLimit) {
         Credentials credentials = GlobalAccountManager.instance()
                 .getCredentials(from, pwd);
 
